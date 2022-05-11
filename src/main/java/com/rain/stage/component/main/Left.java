@@ -1,19 +1,26 @@
 package com.rain.stage.component.main;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 import com.alibaba.fastjson.JSONObject;
+import com.rain.constant.ConnectionMenuItemId;
+import com.rain.constant.MouseButtonType;
 import com.rain.service.DBService;
 import com.rain.service.RedisService;
 import com.rain.stage.NewConnectionStage;
 import com.rain.stage.component.BaseComponent;
 
+import javafx.event.ActionEvent;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
+import javafx.geometry.Point3D;
+import javafx.geometry.Side;
+import javafx.scene.Node;
 import javafx.scene.Parent;
-import javafx.scene.control.Button;
-import javafx.scene.control.ListView;
-import javafx.scene.control.SplitPane;
+import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
@@ -108,6 +115,7 @@ public class Left implements BaseComponent {
 
         connectInstanceList.getItems().clear();
 
+        ConnectionContentMenu contextMenu = ConnectionContentMenu.getInstance();
         for (int i = 0; i < dataList.size(); i++) {
             JSONObject item = dataList.get(i);
 
@@ -119,8 +127,38 @@ public class Left implements BaseComponent {
             connectItem.getChildren().add(new Text(displayName));
 
             connectItem.setOnMouseClicked((event) -> {
+
+                if (MouseButtonType.SECONDARY.equalsIgnoreCase(event.getButton().name())) {
+                    Node temp = event.getPickResult().getIntersectedNode();
+                    Point3D intersectedPoint = event.getPickResult().getIntersectedPoint();
+
+                    // 相当于点击弹出菜单的回调
+                    Consumer<ActionEvent> consumer = (data) -> {
+                        MenuItem selectMenuItem = (MenuItem)data.getTarget();
+                        String selectMenuItemId = selectMenuItem.getId();
+                        // 下面的判断有待优化
+                        if (ConnectionMenuItemId.CONNECTION_MENU_ITEM.equals(selectMenuItemId)) {
+                            System.out.println("点击了连接按钮");
+                        } else if (ConnectionMenuItemId.DELETE_MENU_ITEM.equals(selectMenuItemId)) {
+                            Alert alert = new Alert(
+                                Alert.AlertType.WARNING, "删除后不可恢复，确认删除嘛?", ButtonType.YES, ButtonType.NO
+                            );
+                            Optional<ButtonType> buttonType = alert.showAndWait();
+                            buttonType.ifPresent((selectButtonType) -> {
+                                if (selectButtonType.getText().equalsIgnoreCase("yes")) {
+                                    this.dbService.deleteData(dataList.get(Integer.parseInt(temp.getId())));
+                                    this.refresh();
+                                }
+                            });
+                        }
+                    };
+
+                    contextMenu.showContextMenu(temp, Side.BOTTOM, intersectedPoint.getX(), intersectedPoint.getY(), consumer);
+                    return;
+                }
+
                 if (System.currentTimeMillis() - start < 200) {
-                    HBox temp = (HBox)event.getSource();
+                    Node temp = event.getPickResult().getIntersectedNode();
                     this.redisService.connectRedis(dataList.get(Integer.parseInt(temp.getId())));
                     return;
                 }

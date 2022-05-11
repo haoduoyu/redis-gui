@@ -45,4 +45,12 @@ public class DBService {
             dataJson.toJSONString());
         DBUtil.insert(sql);
     }
+
+    public void deleteData(JSONObject dataJson) {
+        System.out.println("执行删除操作");
+        int id = dataJson.getIntValue("id");
+
+        String sql = String.format("DELETE FROM R_CONNECTION_INFO WHERE ID = %d", id);
+        DBUtil.delete(sql);
+    }
 }

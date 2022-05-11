@@ -131,7 +131,7 @@ public class NewConnectionStage extends Stage {
         baseInfoPane.add(addressBox, 0, 0);
 
         portTF = new TextField();
-        portTF.setPromptText("6379");
+        portTF.setText("6379");
         VBox portBox = this.getCommonVBox(baseInfoPane, portLabel, portTF);
         baseInfoPane.add(portBox, 1, 0);
 
