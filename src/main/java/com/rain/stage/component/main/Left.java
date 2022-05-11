@@ -40,6 +40,11 @@ public class Left implements BaseComponent {
     private long start = 0;
     private ListView<HBox> connectInstanceList = null;
 
+    /**
+     * 连接信息列表
+     */
+    private List<JSONObject> dataList = null;
+
     public Left(Stage stage) {
         this.stage = stage;
         this.dbService = new DBService();
@@ -65,7 +70,7 @@ public class Left implements BaseComponent {
 
     /**
      * 创建左侧栏上半部分
-     * 
+     *
      * @return 创建的窗格
      */
     private Parent createTop(VBox vBox) {
@@ -77,7 +82,7 @@ public class Left implements BaseComponent {
         Button newConnectionBtn = new Button("新建连接");
         newConnectionBtn.setStyle("-fx-text-fill: white;-fx-pref-width: 120;-fx-font-size: 15");
         newConnectionBtn.setBackground(
-                new Background(new BackgroundFill(new Color(125 / 255.0, 174 / 255.0, 125 / 255.0, 1), new CornerRadii(4), Insets.EMPTY)));
+            new Background(new BackgroundFill(new Color(125 / 255.0, 174 / 255.0, 125 / 255.0, 1), new CornerRadii(4), Insets.EMPTY)));
         newConnectionBtn.setMinHeight(30);
         newConnectionBtn.setOnAction((event) -> {
             // 新建连接弹出框位置在原有窗口中间
@@ -94,7 +99,7 @@ public class Left implements BaseComponent {
 
     /**
      * 创建左侧栏下半部分
-     * 
+     *
      * @return 创建的窗格
      */
     private Parent createBottom(VBox vBox) {
@@ -111,7 +116,7 @@ public class Left implements BaseComponent {
     }
 
     private void loadConnectData() {
-        List<JSONObject> dataList = this.dbService.getData();
+        dataList = this.dbService.getData();
 
         connectInstanceList.getItems().clear();
 
@@ -129,24 +134,25 @@ public class Left implements BaseComponent {
             connectItem.setOnMouseClicked((event) -> {
 
                 if (MouseButtonType.SECONDARY.equalsIgnoreCase(event.getButton().name())) {
-                    Node temp = event.getPickResult().getIntersectedNode();
+                    HBox temp = (HBox) event.getSource();
                     Point3D intersectedPoint = event.getPickResult().getIntersectedPoint();
 
                     // 相当于点击弹出菜单的回调
                     Consumer<ActionEvent> consumer = (data) -> {
-                        MenuItem selectMenuItem = (MenuItem)data.getTarget();
+                        MenuItem selectMenuItem = (MenuItem) data.getTarget();
                         String selectMenuItemId = selectMenuItem.getId();
                         // 下面的判断有待优化
+                        String id = temp.getId(); // 这个id是数据的下标
                         if (ConnectionMenuItemId.CONNECTION_MENU_ITEM.equals(selectMenuItemId)) {
-                            System.out.println("点击了连接按钮");
+                            JSONObject jsonObject = dataList.get(Integer.parseInt(id));
+                            this.redisService.connectRedis(jsonObject);
                         } else if (ConnectionMenuItemId.DELETE_MENU_ITEM.equals(selectMenuItemId)) {
-                            Alert alert = new Alert(
-                                Alert.AlertType.WARNING, "删除后不可恢复，确认删除嘛?", ButtonType.YES, ButtonType.NO
-                            );
-                            Optional<ButtonType> buttonType = alert.showAndWait();
-                            buttonType.ifPresent((selectButtonType) -> {
+                            // TODO 这个弹框很丑，还是抽时间弄一个自定义的吧
+                            Alert alert = new Alert(Alert.AlertType.WARNING, "删除后不可恢复，确认删除嘛?", ButtonType.YES, ButtonType.NO);
+                            alert.showAndWait().ifPresent((selectButtonType) -> {
                                 if (selectButtonType.getText().equalsIgnoreCase("yes")) {
-                                    this.dbService.deleteData(dataList.get(Integer.parseInt(temp.getId())));
+                                    // TODO 最好再来一个关闭redis操作，或者提示，我觉得直接关闭就好，因为前面有个提示
+                                    this.dbService.deleteData(dataList.get(Integer.parseInt(id)));
                                     this.refresh();
                                 }
                             });
@@ -158,8 +164,10 @@ public class Left implements BaseComponent {
                 }
 
                 if (System.currentTimeMillis() - start < 200) {
-                    Node temp = event.getPickResult().getIntersectedNode();
-                    this.redisService.connectRedis(dataList.get(Integer.parseInt(temp.getId())));
+                    HBox temp = (HBox) event.getSource();
+                    String id = temp.getId(); // 这个id是数据的下标
+                    JSONObject jsonObject = dataList.get(Integer.parseInt(id)); // object里面的id很重要
+                    this.redisService.connectRedis(jsonObject);
                     return;
                 }
 

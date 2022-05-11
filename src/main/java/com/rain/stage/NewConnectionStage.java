@@ -17,6 +17,7 @@ import javafx.scene.text.Font;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * @author rain.z
@@ -212,6 +213,11 @@ public class NewConnectionStage extends Stage {
                 new Background(new BackgroundFill(new Color(88 / 255.0, 158 / 255.0, 248 / 255.0, 1), new CornerRadii(10), Insets.EMPTY)));
 
         submitBtn.setOnAction(event -> {
+
+            if (!checkInputContent()) {
+                new Alert(Alert.AlertType.WARNING, "请填写必要信息", ButtonType.OK).show();
+                return;
+            }
             JSONObject jsonObject = new JSONObject();
 
             jsonObject.put("address", addressTF.getText());
@@ -232,5 +238,11 @@ public class NewConnectionStage extends Stage {
 
         pane.getChildren().addAll(cancelBtn, submitBtn);
         return pane;
+    }
+
+    private boolean checkInputContent() {
+        // TODO 应根据复选框、不同类型（ip、端口、字符串等）等进行校验
+        return !StringUtils.isAnyBlank(addressTF.getText(), portTF.getText(), passwordF.getText(),
+            usernameTF.getText(), connectNameTF.getText(), separatorTF.getText());
     }
 }
