@@ -1,8 +1,6 @@
 package com.rain.stage.component.main;
 
 import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 import com.alibaba.fastjson.JSONObject;
@@ -18,7 +16,6 @@ import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.geometry.Point3D;
 import javafx.geometry.Side;
-import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
@@ -34,6 +31,8 @@ import javafx.stage.Stage;
 public class Left implements BaseComponent {
     private final Stage stage;
 
+    private final Right right;
+
     private final DBService dbService;
     private final RedisService redisService;
 
@@ -45,8 +44,9 @@ public class Left implements BaseComponent {
      */
     private List<JSONObject> dataList = null;
 
-    public Left(Stage stage) {
+    public Left(Stage stage, Right right) {
         this.stage = stage;
+        this.right = right;
         this.dbService = new DBService();
         this.redisService = new RedisService();
     }
@@ -145,7 +145,10 @@ public class Left implements BaseComponent {
                         String id = temp.getId(); // 这个id是数据的下标
                         if (ConnectionMenuItemId.CONNECTION_MENU_ITEM.equals(selectMenuItemId)) {
                             JSONObject jsonObject = dataList.get(Integer.parseInt(id));
-                            this.redisService.connectRedis(jsonObject);
+                            if (this.redisService.connectRedis(jsonObject)) {
+                                this.right.addTab(jsonObject);
+                            }
+
                         } else if (ConnectionMenuItemId.DELETE_MENU_ITEM.equals(selectMenuItemId)) {
                             // TODO 这个弹框很丑，还是抽时间弄一个自定义的吧
                             Alert alert = new Alert(Alert.AlertType.WARNING, "删除后不可恢复，确认删除嘛?", ButtonType.YES, ButtonType.NO);
@@ -167,7 +170,9 @@ public class Left implements BaseComponent {
                     HBox temp = (HBox) event.getSource();
                     String id = temp.getId(); // 这个id是数据的下标
                     JSONObject jsonObject = dataList.get(Integer.parseInt(id)); // object里面的id很重要
-                    this.redisService.connectRedis(jsonObject);
+                    if (this.redisService.connectRedis(jsonObject)) {
+                        this.right.addTab(jsonObject);
+                    }
                     return;
                 }
 

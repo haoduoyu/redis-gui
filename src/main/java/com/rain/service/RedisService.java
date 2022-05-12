@@ -17,7 +17,7 @@ import java.util.Map;
 public class RedisService {
     private static Map<String, JedisPool> redisClientCache = new HashMap<String, JedisPool>();
 
-    public void connectRedis(JSONObject connectionInfo) {
+    public boolean connectRedis(JSONObject connectionInfo) {
         JSONObject params = connectionInfo.getJSONObject("params");
         String id = connectionInfo.getString("id");
 
@@ -29,10 +29,13 @@ public class RedisService {
                 JedisPool redisInstance = RedisUtil.getRedisInstance(host, port);
                 redisInstance.getResource();
                 redisClientCache.put(id, redisInstance);
+                return true;
             } catch (JedisException e) {
                 System.out.println("警告一下链接失败");
+                return false;
             }
         }
+        return true;
     }
 
     public String get(String id, String key) {
