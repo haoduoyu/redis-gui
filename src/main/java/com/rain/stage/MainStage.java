@@ -49,10 +49,9 @@ public class MainStage extends Stage {
         splitPane.setBackground(new Background(new BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY)));
         splitPane.setOrientation(Orientation.HORIZONTAL);
 
-        Left leftComponent = new Left(this);
-        splitPane.getItems().add(leftComponent.createContent());
-
         Right rightComponent = new Right(this);
+        Left leftComponent = new Left(this, rightComponent);
+        splitPane.getItems().add(leftComponent.createContent());
         splitPane.getItems().add(rightComponent.createContent());
 
         return splitPane;
@@ -65,8 +64,9 @@ public class MainStage extends Stage {
         setMinWidth(MIN_HEIGHT);
 
         // TODO 这里因为用外接屏，所以想每次调试出现在外接屏上
-        double width = Screen.getScreens().get(0).getBounds().getWidth();
-        setX(width + 50);
-        setY(-500);
+//        double width = Screen.getScreens().get(0).getBounds().getWidth();
+//        setX(width + 50);
+//        setY(-500);
+        setX(50);
     }
 }
