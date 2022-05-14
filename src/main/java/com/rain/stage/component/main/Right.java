@@ -2,17 +2,11 @@ package com.rain.stage.component.main;
 
 import com.alibaba.fastjson.JSONObject;
 import com.rain.stage.component.BaseComponent;
-import javafx.geometry.Insets;
+import com.rain.stage.component.main.sub.BasePane;
+import com.rain.stage.component.main.sub.MainRedisInfoPane;
 import javafx.scene.Parent;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
-import javafx.scene.layout.Background;
-import javafx.scene.layout.BackgroundFill;
-import javafx.scene.layout.CornerRadii;
-import javafx.scene.layout.Pane;
-import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 
 import java.util.HashMap;
@@ -43,12 +37,10 @@ public class Right implements BaseComponent {
     }
 
     public void addTab(JSONObject jsonObject) {
-        String name = jsonObject.getString("name");
         String id = jsonObject.getString("id");
 
-        Tab tab = null;
         if (!tabMap.containsKey(id)) {
-            tab = this.createTab(name);
+            Tab tab = this.createTab(jsonObject);
             tabMap.put(id, tab);
             int index = tabPosMap.size();
             tabPosMap.put(tab, index);
@@ -56,14 +48,12 @@ public class Right implements BaseComponent {
         }
     }
 
-    private Tab createTab(String name) {
+    private Tab createTab(JSONObject jsonObject) {
+        String name = jsonObject.getString("name");
         Tab newTab = new Tab(name);
-        Pane pane = new Pane();
-        pane.setBackground(new Background(new BackgroundFill(Color.LIGHTBLUE, CornerRadii.EMPTY, Insets.EMPTY)));
-        Label label = new Label("连接成功(这里可以展示一些redis server信息)");
-        label.setBackground(new Background(new BackgroundFill(Color.LIGHTGREEN, CornerRadii.EMPTY, Insets.EMPTY)));
-        pane.getChildren().add(label);
-        newTab.setContent(pane);
+
+        BasePane basePane = new MainRedisInfoPane(jsonObject);
+        newTab.setContent(basePane);
         return newTab;
     }
 
