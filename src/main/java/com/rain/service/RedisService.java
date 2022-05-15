@@ -6,9 +6,9 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.exceptions.JedisException;
 
-import java.net.ConnectException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author rain.z
@@ -16,7 +16,7 @@ import java.util.Map;
  * @date 2022/05/11
  */
 public class RedisService {
-    private static Map<String, JedisPool> redisClientCache = new HashMap<String, JedisPool>();
+    private final static Map<String, JedisPool> redisClientCache = new HashMap<String, JedisPool>();
 
     public boolean connectRedis(JSONObject connectionInfo) {
         JSONObject params = connectionInfo.getJSONObject("params");
@@ -57,5 +57,9 @@ public class RedisService {
 
     public String info(String id) {
         return this.getResource(id).info();
+    }
+
+    public Set<String> keys(String id, String pattern) {
+        return this.getResource(id).keys(pattern);
     }
 }

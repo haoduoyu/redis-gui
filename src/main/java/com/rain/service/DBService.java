@@ -1,12 +1,12 @@
 package com.rain.service;
 
+import com.alibaba.fastjson.JSONObject;
+import com.rain.util.DBUtil;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-
-import com.alibaba.fastjson.JSONObject;
-import com.rain.util.DBUtil;
 
 /**
  * @author rain.z

@@ -41,6 +41,7 @@ public class Right implements BaseComponent {
 
         if (!tabMap.containsKey(id)) {
             Tab tab = this.createTab(jsonObject);
+            tab.setId(id);
             tabMap.put(id, tab);
             int index = tabPosMap.size();
             tabPosMap.put(tab, index);
@@ -54,6 +55,11 @@ public class Right implements BaseComponent {
 
         BasePane basePane = new MainRedisInfoPane(jsonObject);
         newTab.setContent(basePane);
+        newTab.setOnClosed(event -> {
+            Tab closeTab = (Tab)event.getTarget();
+            Tab removeItem = tabMap.remove(closeTab.getId());
+            tabPosMap.remove(removeItem);
+        });
         return newTab;
     }
 

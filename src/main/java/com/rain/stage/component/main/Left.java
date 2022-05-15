@@ -1,16 +1,11 @@
 package com.rain.stage.component.main;
 
-import java.util.List;
-import java.util.function.Consumer;
-
 import com.alibaba.fastjson.JSONObject;
 import com.rain.constant.ConnectionMenuItemId;
 import com.rain.constant.MouseButtonType;
-import com.rain.service.DBService;
-import com.rain.service.RedisService;
+import com.rain.service.LeftService;
 import com.rain.stage.NewConnectionStage;
 import com.rain.stage.component.BaseComponent;
-
 import javafx.event.ActionEvent;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
@@ -23,6 +18,10 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 
+import java.util.List;
+import java.util.Set;
+import java.util.function.Consumer;
+
 /**
  * @author rain.z
  * @description Left
@@ -30,25 +29,15 @@ import javafx.stage.Stage;
  */
 public class Left implements BaseComponent {
     private final Stage stage;
-
     private final Right right;
-
-    private final DBService dbService;
-    private final RedisService redisService;
-
+    private final LeftService leftService;
     private long start = 0;
-    private ListView<HBox> connectInstanceList = null;
-
-    /**
-     * 连接信息列表
-     */
-    private List<JSONObject> dataList = null;
+    private TreeView<HBox> connectInstanceList = null;
 
     public Left(Stage stage, Right right) {
         this.stage = stage;
         this.right = right;
-        this.dbService = new DBService();
-        this.redisService = new RedisService();
+        this.leftService = new LeftService();
     }
 
     public Parent createContent() {
@@ -106,7 +95,8 @@ public class Left implements BaseComponent {
         Pane bottomPane = new Pane();
         bottomPane.prefHeightProperty().bind(vBox.heightProperty());
 
-        connectInstanceList = new ListView<>();
+        connectInstanceList = new TreeView<>();
+        connectInstanceList.setShowRoot(false);
         connectInstanceList.prefHeightProperty().bind(bottomPane.heightProperty());
         connectInstanceList.prefWidthProperty().bind(vBox.widthProperty());
         this.loadConnectData();
@@ -116,9 +106,8 @@ public class Left implements BaseComponent {
     }
 
     private void loadConnectData() {
-        dataList = this.dbService.getData();
-
-        connectInstanceList.getItems().clear();
+        List<JSONObject> dataList = this.leftService.getData();
+        TreeItem<HBox> rootItem = new TreeItem<>();
 
         ConnectionContentMenu contextMenu = ConnectionContentMenu.getInstance();
         for (int i = 0; i < dataList.size(); i++) {
@@ -127,12 +116,14 @@ public class Left implements BaseComponent {
             String displayName = String.format("%s", item.getString("name"));
             // 连接列表的item
             HBox connectItem = new HBox();
+            TreeItem<HBox> rowItem = new TreeItem<>(connectItem);
             connectItem.prefWidthProperty().bind(connectInstanceList.prefWidthProperty());
             connectItem.setId(String.valueOf(i));
             connectItem.getChildren().add(new Text(displayName));
 
             connectItem.setOnMouseClicked((event) -> {
 
+                // 响应右键效果
                 if (MouseButtonType.SECONDARY.equalsIgnoreCase(event.getButton().name())) {
                     HBox temp = (HBox) event.getSource();
                     Point3D intersectedPoint = event.getPickResult().getIntersectedPoint();
@@ -145,17 +136,16 @@ public class Left implements BaseComponent {
                         String id = temp.getId(); // 这个id是数据的下标
                         if (ConnectionMenuItemId.CONNECTION_MENU_ITEM.equals(selectMenuItemId)) {
                             JSONObject jsonObject = dataList.get(Integer.parseInt(id));
-                            if (this.redisService.connectRedis(jsonObject)) {
+                            if (this.leftService.connectRedis(jsonObject)) {
                                 this.right.addTab(jsonObject);
                             }
-
                         } else if (ConnectionMenuItemId.DELETE_MENU_ITEM.equals(selectMenuItemId)) {
                             // TODO 这个弹框很丑，还是抽时间弄一个自定义的吧
                             Alert alert = new Alert(Alert.AlertType.WARNING, "删除后不可恢复，确认删除嘛?", ButtonType.YES, ButtonType.NO);
                             alert.showAndWait().ifPresent((selectButtonType) -> {
                                 if (selectButtonType.getText().equalsIgnoreCase("yes")) {
                                     // TODO 最好再来一个关闭redis操作，或者提示，我觉得直接关闭就好，因为前面有个提示
-                                    this.dbService.deleteData(dataList.get(Integer.parseInt(id)));
+                                    this.leftService.deleteData(dataList.get(Integer.parseInt(id)));
                                     this.refresh();
                                 }
                             });
@@ -166,12 +156,13 @@ public class Left implements BaseComponent {
                     return;
                 }
 
+                // 响应双击动作
                 if (System.currentTimeMillis() - start < 200) {
                     HBox temp = (HBox) event.getSource();
                     String id = temp.getId(); // 这个id是数据的下标
                     JSONObject jsonObject = dataList.get(Integer.parseInt(id)); // object里面的id很重要
-                    if (this.redisService.connectRedis(jsonObject)) {
-                        this.right.addTab(jsonObject);
+                    if (this.leftService.connectRedis(jsonObject)) {
+                        this.afterConnectSuccess(jsonObject);
                     }
                     return;
                 }
@@ -179,8 +170,22 @@ public class Left implements BaseComponent {
                 start = System.currentTimeMillis();
             });
 
-            connectInstanceList.getItems().add(connectItem);
+            rootItem.getChildren().add(rowItem);
         }
+        connectInstanceList.setRoot(rootItem);
+    }
+
+    /**
+     * 连接成功后
+     * 1、添加右侧tab；2、显示左侧keys列表；
+     *
+     * @param jsonObject 需要传递给右侧的数据
+     */
+    private void afterConnectSuccess(JSONObject jsonObject) {
+        this.right.addTab(jsonObject);
+        // TODO 这里默认是db0，后续应该在左侧列表处增加db切换操作
+        Set<String> allKeys = this.leftService.getAllKeys(jsonObject);
+        System.out.println(allKeys);
     }
 
     /**

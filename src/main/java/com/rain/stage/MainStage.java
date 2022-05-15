@@ -2,7 +2,6 @@ package com.rain.stage;
 
 import com.rain.stage.component.main.Left;
 import com.rain.stage.component.main.Right;
-
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.scene.Parent;
@@ -12,7 +11,6 @@ import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.CornerRadii;
 import javafx.scene.paint.Color;
-import javafx.stage.Screen;
 import javafx.stage.Stage;
 
 /**

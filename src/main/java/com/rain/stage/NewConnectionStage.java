@@ -4,7 +4,6 @@ import com.alibaba.fastjson.JSONObject;
 import com.rain.service.DBService;
 import com.rain.stage.component.BaseComponent;
 import com.rain.stage.component.main.Left;
-
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;

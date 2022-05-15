@@ -313,7 +313,7 @@ public class MainRedisInfoPane extends BasePane {
                 if (rowInfo.trim().length() == 0 || rowInfo.contains("#")) {
                     continue;
                 }
-                System.out.println(rowInfo);
+
                 String[] tempSplit = rowInfo.split(":");
                 String key = "";
                 String value = "";
