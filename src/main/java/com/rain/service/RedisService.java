@@ -2,6 +2,7 @@ package com.rain.service;
 
 import com.alibaba.fastjson.JSONObject;
 import com.rain.util.RedisUtil;
+import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.exceptions.JedisException;
 
@@ -38,11 +39,23 @@ public class RedisService {
         return true;
     }
 
+    private Jedis getResource(String id) {
+        return redisClientCache.get(id).getResource();
+    }
+
     public String get(String id, String key) {
-        return redisClientCache.get(id).getResource().get(key);
+        return this.getResource(id).get(key);
     }
 
     public String set(String id, String key, String value) {
-        return redisClientCache.get(id).getResource().set(key, value);
+        return this.getResource(id).set(key, value);
+    }
+
+    public String info(String id, String section) {
+        return this.getResource(id).info(section);
+    }
+
+    public String info(String id) {
+        return this.getResource(id).info();
     }
 }

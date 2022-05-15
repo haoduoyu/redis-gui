@@ -3,6 +3,7 @@ package com.rain.stage.component.main.sub;
 import com.alibaba.fastjson.JSONObject;
 import com.rain.entity.AllRedisInfo;
 import com.rain.entity.RedisKVStatistics;
+import com.rain.service.RedisService;
 import javafx.beans.property.ReadOnlyDoubleProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -27,6 +28,7 @@ import java.util.function.Function;
  */
 public class MainRedisInfoPane extends BasePane {
 
+    private JSONObject data;
     private final VBox dashboard = new VBox();
     private final HBox firstRow = new HBox(10);
     private final VBox secondRow = new VBox(10);
@@ -43,8 +45,9 @@ public class MainRedisInfoPane extends BasePane {
     private final Background BOX_BORDER_BACKGROUND = new Background(new BackgroundFill(Color.WHITE, new CornerRadii(10), Insets.EMPTY));
 
     public MainRedisInfoPane(JSONObject data) {
+        this.data = data;
         this.init();
-        this.createPane(data);
+        this.createPane();
     }
 
     private void init() {
@@ -74,7 +77,7 @@ public class MainRedisInfoPane extends BasePane {
     }
 
     @Override
-    public void createPane(JSONObject data) {
+    public void createPane() {
         this.createFistRow();
         this.createSecondRow();
         this.createThirdRow();
@@ -85,13 +88,20 @@ public class MainRedisInfoPane extends BasePane {
      * 创建第一行展示信息
      */
     private void createFistRow() {
+
+        // 暂时没有需要修改的参数
+        Function<JSONObject, VBox> createVBox = (srcData) -> {
+            VBox box = new VBox(20);
+            box.prefWidthProperty().bind(widthProperty().divide(3.15));
+            box.setPrefHeight(200);
+            box.setPadding(new Insets(10));
+            box.setBackground(BOX_BORDER_BACKGROUND);
+            box.setBorder(BOX_BORDER);
+            return box;
+        };
+
         // 服务器信息开始
-        VBox serverVBox = new VBox(20);
-        serverVBox.prefWidthProperty().bind(widthProperty().divide(3.15));
-        serverVBox.setPrefHeight(200);
-        serverVBox.setPadding(new Insets(10));
-        serverVBox.setBackground(BOX_BORDER_BACKGROUND);
-        serverVBox.setBorder(BOX_BORDER);
+        VBox serverVBox = createVBox.apply(null);
 
         Label serverLabel = new Label("服务器");
         Separator serverSeparator = new Separator(Orientation.HORIZONTAL);
@@ -106,12 +116,7 @@ public class MainRedisInfoPane extends BasePane {
         // 服务器信息结束
 
         // 内存信息开始
-        VBox memoryVBox = new VBox(20);
-        memoryVBox.prefWidthProperty().bind(widthProperty().divide(3.15));
-        memoryVBox.setPrefHeight(200);
-        memoryVBox.setPadding(new Insets(10));
-        memoryVBox.setBackground(BOX_BORDER_BACKGROUND);
-        memoryVBox.setBorder(BOX_BORDER);
+        VBox memoryVBox = createVBox.apply(null);
 
         Label memoryLabel = new Label("内存");
         Separator memorySeparator = new Separator(Orientation.HORIZONTAL); // -----------------
@@ -126,12 +131,7 @@ public class MainRedisInfoPane extends BasePane {
         // 内存信息结束
 
         // 状态信息开始
-        VBox statusVBox = new VBox(20);
-        statusVBox.prefWidthProperty().bind(widthProperty().divide(3.15));
-        statusVBox.setPrefHeight(200);
-        statusVBox.setPadding(new Insets(10));
-        statusVBox.setBackground(BOX_BORDER_BACKGROUND);
-        statusVBox.setBorder(BOX_BORDER);
+        VBox statusVBox = createVBox.apply(null);
 
         Label statusLabel = new Label("状态");
         Separator statusSeparator = new Separator(Orientation.HORIZONTAL);
@@ -256,11 +256,27 @@ public class MainRedisInfoPane extends BasePane {
 
         tableView.getColumns().addAll(dbCol, keysCol, expireCol, avgTTLCol);
 
-        ObservableList<RedisKVStatistics> redisInfoData = FXCollections.observableArrayList(new RedisKVStatistics("db0", "1", "0", "0"));
-        for (int i = 0; i < 10; i++) {
-            redisInfoData.add(new RedisKVStatistics("db" + (i + 1), "1", "1", "2"));
+        String id = this.data.getString("id");
+        String keyspace = new RedisService().info(id, "Keyspace");
+        String[] split = keyspace.split("\r\n");
+        if (split.length > 1) {
+            ObservableList<RedisKVStatistics> redisInfoData = FXCollections.observableArrayList();
+            for (int i = 1; i < split.length; i++) {
+                String rowInfo = split[i];
+                String[] tempSplit = rowInfo.split(":");
+                String dbName = tempSplit[0];
+                String dbInfo = tempSplit[1];
+                String[] dbInfoSplit = dbInfo.split(",");
+                String keyInfo = dbInfoSplit[0];
+                String expiresInfo = dbInfoSplit[1];
+                String avgTTLInfo = dbInfoSplit[2];
+
+                RedisKVStatistics kvInfo = new RedisKVStatistics(dbName, keyInfo.split("=")[1],
+                    expiresInfo.split("=")[1], avgTTLInfo.split("=")[1]);
+                redisInfoData.add(kvInfo);
+            }
+            tableView.setItems(redisInfoData);
         }
-        tableView.setItems(redisInfoData);
 
         return tableView;
     }
@@ -287,11 +303,34 @@ public class MainRedisInfoPane extends BasePane {
 
         allRedisInfoTableView.getColumns().addAll(keyCol, valueCol);
 
-        ObservableList<AllRedisInfo> allRedisList = FXCollections.observableArrayList(new AllRedisInfo("db0", "1"));
-        for (int i = 0; i < 10; i++) {
-            allRedisList.add(new AllRedisInfo("db" + (i + 1), "1"));
+        String id = this.data.getString("id");
+        String info = new RedisService().info(id);
+        String[] split = info.split("\r\n");
+        if (split.length > 1) {
+            ObservableList<AllRedisInfo> allRedisList = FXCollections.observableArrayList();
+            for (int i = 1; i < split.length; i++) {
+                String rowInfo = split[i];
+                if (rowInfo.trim().length() == 0 || rowInfo.contains("#")) {
+                    continue;
+                }
+                System.out.println(rowInfo);
+                String[] tempSplit = rowInfo.split(":");
+                String key = "";
+                String value = "";
+
+                if (tempSplit.length > 1) {
+                    value = tempSplit[1];
+                }
+
+                if (tempSplit.length > 0) {
+                    key = tempSplit[0];
+                }
+
+                AllRedisInfo kvInfo = new AllRedisInfo(key, value);
+                allRedisList.add(kvInfo);
+            }
+            allRedisInfoTableView.setItems(allRedisList);
         }
-        allRedisInfoTableView.setItems(allRedisList);
 
         return allRedisInfoTableView;
     }

@@ -9,6 +9,6 @@ import javafx.scene.layout.Pane;
  * @date 2022/05/14
  */
 public abstract class BasePane extends Pane {
-    public void createPane(JSONObject data) {
+    public void createPane() {
     }
 }
