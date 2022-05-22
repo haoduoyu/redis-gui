@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.rain.constant.TabType;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -40,15 +41,16 @@ public class LeftService {
     public JSONObject getValueByKey(JSONObject jsonObject, String key) {
         String id = jsonObject.getString("id");
 
-        String type = this.redisService.type(id, key);
-        TabType tabType = null;
-        if (!"none".equals(type)) {
-            tabType = TabType.typeNameToValue(type);
+        String value = this.redisService.get(id, key);
+
+        if (Objects.isNull(value)) {
+            return new JSONObject();
         }
 
+        String type = this.redisService.type(id, key);
         JSONObject result = new JSONObject();
-        result.put("value", this.redisService.get(id, key));
-        result.put("type", tabType);
+        result.put("value", value);
+        result.put("type", TabType.typeNameToValue(type));
         result.put("key", key);
 
         return result;
