@@ -18,6 +18,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -40,6 +41,7 @@ public class Left implements BaseComponent {
         this.leftService = new LeftService();
     }
 
+    @Override
     public Parent createContent() {
         VBox vBox = new VBox();
         vBox.setMinWidth(260);
@@ -111,6 +113,7 @@ public class Left implements BaseComponent {
 
         ConnectionContentMenu contextMenu = ConnectionContentMenu.getInstance();
         for (int i = 0; i < dataList.size(); i++) {
+            final int tempPos = i;
             JSONObject item = dataList.get(i);
 
             String displayName = String.format("%s", item.getString("name"));
@@ -162,7 +165,7 @@ public class Left implements BaseComponent {
                     String id = temp.getId(); // 这个id是数据的下标
                     JSONObject jsonObject = dataList.get(Integer.parseInt(id)); // object里面的id很重要
                     if (this.leftService.connectRedis(jsonObject)) {
-                        this.afterConnectSuccess(jsonObject);
+                        this.afterConnectSuccess(tempPos, jsonObject);
                     }
                     return;
                 }
@@ -179,13 +182,31 @@ public class Left implements BaseComponent {
      * 连接成功后
      * 1、添加右侧tab；2、显示左侧keys列表；
      *
+     * @param pos        item的位置
      * @param jsonObject 需要传递给右侧的数据
      */
-    private void afterConnectSuccess(JSONObject jsonObject) {
+    private void afterConnectSuccess(int pos, JSONObject jsonObject) {
         this.right.addTab(jsonObject);
         // TODO 这里默认是db0，后续应该在左侧列表处增加db切换操作
         Set<String> allKeys = this.leftService.getAllKeys(jsonObject);
-        System.out.println(allKeys);
+        TreeItem<HBox> hBoxTreeItem = connectInstanceList.getRoot().getChildren().get(pos);
+
+        List<TreeItem<HBox>> list = new ArrayList<>();
+        allKeys.forEach(key -> {
+            HBox keyItem = new HBox();
+            keyItem.prefWidthProperty().bind(connectInstanceList.prefWidthProperty());
+            keyItem.getChildren().add(new Text(key));
+
+            keyItem.setOnMouseClicked(event -> {
+                JSONObject valueByKey = leftService.getValueByKey(jsonObject, key);
+                this.right.addTabForValue(valueByKey);
+            });
+
+            TreeItem<HBox> rowItem = new TreeItem<>(keyItem);
+            list.add(rowItem);
+        });
+        hBoxTreeItem.getChildren().addAll(list);
+
     }
 
     /**

@@ -47,6 +47,10 @@ public class RedisService {
         return this.getResource(id).get(key);
     }
 
+    public String type(String id, String key) {
+        return this.getResource(id).type(key);
+    }
+
     public String set(String id, String key, String value) {
         return this.getResource(id).set(key, value);
     }
